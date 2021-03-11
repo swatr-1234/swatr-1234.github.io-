@@ -2,7 +2,6 @@ package com.gslab.assignment.EmployeeManagement.dao;
 
 import com.gslab.assignment.EmployeeManagement.entities.Employee;
 import com.gslab.assignment.EmployeeManagement.entities.EmployeeId;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
@@ -16,4 +15,6 @@ public interface EmployeeDao extends CrudRepository<Employee, Integer> {
     Optional<Object> findByIdEmpIdAndIdCompanyName(int employeeId, String companyName);
 
     void deleteByIdEmpIdAndIdCompanyName(int employeeId, String companyName);
+
+    Boolean existsById(EmployeeId gslab);
 }
