@@ -1,53 +1,40 @@
 package com.gslab.assignment.EmployeeManagement.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gslab.assignment.EmployeeManagement.dao.EmployeeDao;
 import com.gslab.assignment.EmployeeManagement.entities.Address;
 import com.gslab.assignment.EmployeeManagement.entities.Employee;
 import com.gslab.assignment.EmployeeManagement.entities.EmployeeId;
 import com.gslab.assignment.EmployeeManagement.service.EmployeeService;
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MockMvcBuilder;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.context.WebApplicationContext;
 
-import java.lang.reflect.Type;
-import java.text.ParseException;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 @RunWith(SpringRunner.class)
 @WebMvcTest(EmployeeController.class)
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class EmployeeControllerTest {
 
     @Autowired
@@ -59,117 +46,149 @@ class EmployeeControllerTest {
     @Autowired
     private WebApplicationContext wc;
 
-    ObjectMapper obj= new ObjectMapper();
+    ObjectMapper obj = new ObjectMapper();
 
+    List<Address> l1 = new ArrayList<>();
+    Employee e = new Employee();
+    Employee e1 = new Employee();
 
-    public static List<Address> l1= new ArrayList<>();
+    @BeforeEach
+    public void setUp( TestInfo testInfo ) throws Exception {
 
-    public static Employee e= new Employee();
+        System.out.println( "Start...." + testInfo.getDisplayName() );
+        mockMvc = MockMvcBuilders.webAppContextSetup( wc ).build();
 
-    public static List<Employee> empList = new ArrayList<>();
+        l1.add( new Address( "THANE", "800000", "MAHARASHTRA", "LANE1" ) );
+        l1.add( new Address( "PUNE", "800000", "MAHARASHTRA", "LANE2" ) );
 
+        e.setId( new EmployeeId( 1, "GSLAB" ) );
+        e.setFirstName( "TOM" );
+        e.setMiddleName( "DANIEL" );
+        e.setLastName( "RADCLIFF" );
+        e.setDateOfBirth( new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" ).parse( "2001-01-12 15:02:22" ) );
+        e.setDateOfJoining( new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" ).parse( "2021-03-29 15:01:00" ) );
+        e.setEmpAddress( l1 );
 
-    @Before
-    public void setUp(){
+        e1.setId( new EmployeeId( 2, "GSLAB" ) );
+        e1.setFirstName( "SWATI" );
+        e1.setMiddleName( "RAVINDRA" );
+        e1.setLastName( "JADHAV" );
+        e1.setDateOfBirth( new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" ).parse( "2001-04-12 15:02:22" ) );
+        e1.setDateOfJoining( new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" ).parse( "2021-03-29 15:01:00" ) );
+        e1.setEmpAddress( l1 );
 
-        mockMvc = MockMvcBuilders.webAppContextSetup(wc).build();
     }
 
- @Test
-    void createNewEmployee() throws Exception {
-        l1.add(new Address("THANE","800000","MAHARASHTRA","LANE1"));
-        l1.add(new Address("PUNE","800000","MAHARASHTRA","LANE2"));
+    @AfterEach
+    public void tearDown( TestInfo testInfo ) {
 
-        e.setId(new EmployeeId(1,"GSLAB"));
-        e.setFirstName("TOM");
-        e.setMiddleName("DANIEL");
-        e.setLastName("RADCLIFF");
-        e.setDateOfBirth(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse("2001-01-12 15:02:22"));
-        e.setDateOfJoining(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse("2021-03-11 15:01:00"));
-        e.setEmpAddress(l1);
+        System.out.println( "End...." + testInfo.getDisplayName() );
 
-        Mockito.when(employeeService.createNewEmployee(Mockito.any(Employee.class))).thenReturn(e);
-
-        MvcResult result= mockMvc.perform(post("/employee-management/employee")
-                         .contentType(MediaType.APPLICATION_JSON_VALUE)
-                         .content(obj.writeValueAsString(e)))
-                         .andExpect(status().isOk()).andReturn();
-        Employee e1= obj.readValue(result.getResponse().getContentAsString(),Employee.class);
-        assertThat(e).isEqualTo(e1);
     }
 
     @Test
+    @DisplayName("createNewEmployee method")
+    @Order(1)
+    void createNewEmployee() throws Exception {
+
+        given( employeeService.createNewEmployee( Mockito.any( Employee.class ) ) ).willReturn( e );
+
+        MvcResult result =mockMvc.perform( post( "/employee-management/employee" )
+                .contentType( MediaType.APPLICATION_JSON_VALUE )
+                .content( obj.writeValueAsString( e ) ) )
+                .andExpect( status().isOk() )
+                .andDo( print() )
+                .andExpect( jsonPath( "$.id" ).value( new EmployeeId( 1, "GSLAB" ) ) )
+                .andExpect( jsonPath( "$.firstName" ).value( "TOM" ) )
+                .andExpect( jsonPath( "$.middleName" ).value( "DANIEL" ) )
+                .andExpect( jsonPath( "$.lastName" ).value( "RADCLIFF" ) )
+                .andReturn();
+
+        Employee e1 = obj.readValue( result.getResponse().getContentAsString(), Employee.class );
+        assertThat( e ).isEqualTo( e1 );
+
+    }
+
+    @Test
+    @DisplayName("getEmployeeByEmployeeId method")
+    @Order(2)
     void getEmployeeByEmployeeId() throws Exception {
 
-        Mockito.when(employeeService.findEmployeeByEmployeeId(Mockito.anyInt(),Mockito.anyString())).thenReturn(e);
-        MvcResult result= mockMvc.perform(get("/employee-management/employee?employeeId=1&companyName=GSLAB")
-                .contentType(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(status().isOk()).andReturn();
-        Employee e1= obj.readValue(result.getResponse().getContentAsString(),Employee.class);
-        assertThat(e).isEqualTo(e1);
+        given( employeeService.findEmployeeByEmployeeId( Mockito.anyInt(), Mockito.anyString() ) )
+                .willReturn( e );
+
+        MvcResult result = mockMvc.perform( get( "/employee-management/employee?employeeId=1&companyName=GSLAB" )
+                .contentType( MediaType.APPLICATION_JSON_VALUE ) )
+                .andExpect( status().isOk() )
+                .andDo( print() )
+                .andExpect( jsonPath( "$.id" ).value( new EmployeeId( 1, "GSLAB" ) ) )
+                .andExpect( jsonPath( "$.firstName" ).value( "TOM" ) )
+                .andExpect( jsonPath( "$.middleName" ).value( "DANIEL" ) )
+                .andExpect( jsonPath( "$.lastName" ).value( "RADCLIFF" ) )
+                .andReturn();
+
+        Employee e1 = obj.readValue( result.getResponse().getContentAsString(), Employee.class );
+        assertThat( e ).isEqualTo( e1 );
+
     }
 
     @Test
+    @DisplayName("getAllEmployees method")
+    @Order(3)
     void getAllEmployees() throws Exception {
 
-        Employee e1= new Employee();
+        List<Employee> employeeList = new ArrayList<>();
+        employeeList.add( e );
+        employeeList.add( e1 );
 
-        e1.setId(new EmployeeId(2,"GSLAB"));
-        e1.setFirstName("SWATI");
-        e1.setMiddleName("RAVINDRA");
-        e1.setLastName("JADHAV");
-        e1.setDateOfBirth(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse("2001-04-12 15:02:22"));
-        e1.setDateOfJoining(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse("2021-03-11 15:01:00"));
-        e1.setEmpAddress(l1);
+        given( employeeService.findAllEmployees() ).willReturn( employeeList );
 
-        List<Employee> employeeList= new ArrayList<>();
-        employeeList.add(e);
-        employeeList.add(e1);
+        MvcResult result = mockMvc.perform( get( "/employee-management/employees" )
+                .contentType( MediaType.APPLICATION_JSON_VALUE ) )
+                .andExpect( status().isOk() ).andReturn();
 
-        Mockito.when(employeeService.findAllEmployees()).thenReturn(employeeList);
-
-        MvcResult result= mockMvc.perform(get("/employee-management/employees")
-                .contentType(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(status().isOk()).andReturn();
-
-
-        List<Employee> empList1= obj.readValue(result.getResponse().getContentAsString(),new TypeReference <List<Employee>>(){});
-        assertThat(employeeList).isEqualTo(empList1);
-        empList1.forEach(System.out::println);
+        List<Employee> empList1 = obj.readValue( result.getResponse().getContentAsString(), new TypeReference<List<Employee>>() {
+        } );
+        assertThat( employeeList ).isEqualTo( empList1 );
+        empList1.forEach( System.out::println );
 
     }
 
     @Test
+    @DisplayName("deleteEmployeeByEmployeeId method")
+    @Order(5)
     void deleteEmployeeByEmployeeId() throws Exception {
 
-        Mockito.when(employeeService.findEmployeeByEmployeeId(Mockito.anyInt(),Mockito.anyString())).thenReturn(e);
-        MvcResult result= mockMvc.perform(delete("/employee-management/employee?employeeId=1&companyName=GSLAB")
-                .contentType(MediaType.APPLICATION_JSON_VALUE))
-                .andExpect(status().isOk()).andReturn();
-        Mockito.verify(employeeService,Mockito.times(1)).deleteEmployeeByEmployeeId(Mockito.anyInt(),Mockito.anyString());
+        given( employeeService.findEmployeeByEmployeeId( Mockito.anyInt(), Mockito.anyString() ) ).willReturn( e );
+        MvcResult result = mockMvc.perform( delete( "/employee-management/employee?employeeId=1&companyName=GSLAB" )
+                .contentType( MediaType.APPLICATION_JSON_VALUE ) )
+                .andExpect( status().isOk() ).andReturn();
+        Mockito.verify( employeeService, Mockito.times( 1 ) ).deleteEmployeeByEmployeeId( Mockito.anyInt(), Mockito.anyString() );
     }
 
     @Test
+    @DisplayName("updateEmployee method")
+    @Order(4)
     void updateEmployee() throws Exception {
 
+        given( employeeService.findEmployeeByEmployeeId( 1, "GSLAB" ) ).willReturn( e );
+        l1.add( new Address( "SATARA", "12367", "MAHARASHTRA", "LANE1" ) );
+        e.setId( new EmployeeId( 1, "GSLAB" ) );
+        e.setFirstName( "TINA" );
+        e.setMiddleName( "MANI" );
+        e.setLastName( "RAO" );
+        e.setDateOfBirth( new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" ).parse( "2001-04-15 15:02:22" ) );
+        e.setDateOfJoining( new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" ).parse( "2021-03-29 15:01:00" ) );
+        e.setEmpAddress( l1 );
 
-        Mockito.when(employeeService.findEmployeeByEmployeeId(1,"GSLAB")).thenReturn(e);
-        l1.add(new Address("SATARA","12367","MAHARASHTRA","LANE1"));
-        e.setId(new EmployeeId(1,"GSLAB"));
-        e.setFirstName("TINA");
-        e.setMiddleName("MANI");
-        e.setLastName("RAO");
-        e.setDateOfBirth(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse("2001-04-15 15:02:22"));
-        e.setDateOfJoining(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse("2021-03-11 15:01:00"));
-        e.setEmpAddress(l1);
+        Mockito.when( employeeService.updateEmployee( e ) ).thenReturn( e );
+        MvcResult result = mockMvc.perform( put( "/employee-management/employee?employeeId=1&companyName=GSLAB" )
+                .contentType( MediaType.APPLICATION_JSON_VALUE )
+                .content( obj.writeValueAsString( e ) ) )
+                .andExpect( status().isAccepted() ).andReturn();
+        Employee e1 = obj.readValue( result.getResponse().getContentAsString(), Employee.class );
+        assertThat( e ).isEqualTo( e1 );
 
-        Mockito.when(employeeService.updateEmployee(e)).thenReturn(e);
-        MvcResult result= mockMvc.perform(put("/employee-management/employee?employeeId=1&companyName=GSLAB")
-                .contentType(MediaType.APPLICATION_JSON_VALUE)
-                .content(obj.writeValueAsString(e)))
-                .andExpect(status().isAccepted()).andReturn();
-        Employee e1= obj.readValue(result.getResponse().getContentAsString(),Employee.class);
-        assertThat(e).isEqualTo(e1);
     }
 
 }

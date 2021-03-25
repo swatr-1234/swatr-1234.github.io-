@@ -16,5 +16,4 @@ public interface EmployeeDao extends CrudRepository<Employee, Integer> {
 
     void deleteByIdEmpIdAndIdCompanyName(int employeeId, String companyName);
 
-    Boolean existsById(EmployeeId gslab);
 }
